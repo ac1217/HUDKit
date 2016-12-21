@@ -33,9 +33,15 @@ public enum HUDLayoutDirection : Int {
     
 }
 
-extension UIView {
+public protocol HUDtable {
     
-    var hud: HUD{
+    var hud: HUD { get }
+    
+}
+
+extension UIView: HUDtable {
+    
+    public var hud: HUD{
         
         var hud: HUD!
         for subview in subviews {
@@ -51,6 +57,7 @@ extension UIView {
             hud = HUD()
             addSubview(hud)
             hud.frame = bounds
+            hud.transform = CGAffineTransform(scaleX: 0, y: 0)
         }
         
         hud.reset()
@@ -61,7 +68,7 @@ extension UIView {
     
 }
 
-fileprivate enum HUDAnimation : Int {
+fileprivate enum HUDLoadingAnimation : Int {
     
     case rotation
     case gif
@@ -79,17 +86,18 @@ fileprivate enum HUDState : Int {
     
 }
 
-extension HUD {
+public extension HUD {
     
-    open func show(success: String?) {
+     func show(success: String?) {
         
         label.text = success
         
         state = .success
         
+        
     }
     
-    open func show(error: String?){
+     func show(error: String?){
         
         label.text = error
         
@@ -97,7 +105,7 @@ extension HUD {
         
     }
     
-    open func show(loading: String? = nil){
+     func show(loading: String? = nil){
         
         label.text = loading
         
@@ -105,7 +113,7 @@ extension HUD {
         
     }
     
-    open func show(info: String?) {
+     func show(info: String?) {
         
         label.text = info
         
@@ -113,7 +121,7 @@ extension HUD {
         
     }
     
-    open func show(progress: Double, status: String? = nil) {
+     func show(progress: Double, status: String? = nil) {
         
         label.text = status
         
@@ -129,15 +137,23 @@ extension HUD {
     }
     
     
-    open func dismiss(){
+     func dismiss(){
         
         timer?.invalidate()
         timer = nil
-        removeFromSuperview()
-
+        
+        UIView.animate(withDuration: 0.25, animations: { 
+            
+            self.alpha = 0
+        }) { (_) in
+            
+            self.removeFromSuperview()
+        }
+        
     }
     
-    open func reset() {
+    
+     func reset() {
         
         contentInset = HUD.defaultContentInset
         horizontalMargin = HUD.defaultHorizontalMargin
@@ -160,7 +176,7 @@ extension HUD {
 
 
 
-class HUD: UIView {
+open class HUD: UIView {
     /************
      
      配置全局属性
@@ -352,7 +368,7 @@ class HUD: UIView {
     }
     
     
-     override func layoutSubviews() {
+     override open func layoutSubviews() {
         
         super.layoutSubviews()
         
@@ -434,7 +450,7 @@ class HUD: UIView {
         
     }
     
-    required init?(coder aDecoder: NSCoder) {
+    required public init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
@@ -452,7 +468,7 @@ class HUD: UIView {
                 progressLabel.isHidden = true
                 
                 imageView.image = infoImage ?? UIImage.bundleImage(named: "info")?.render(color: label.textColor)
-                animation = .none
+                loadingAnimation = .none
                 
                 addTimer()
                 
@@ -464,7 +480,7 @@ class HUD: UIView {
                 progressLabel.isHidden = true
                 
                 imageView.image = successImage ?? UIImage.bundleImage(named: "success")?.render(color: label.textColor)
-                animation = .none
+                loadingAnimation = .none
                 addTimer()
                 
             case .error:
@@ -475,7 +491,8 @@ class HUD: UIView {
                 progressLabel.isHidden = true
                 
                 imageView.image = errorImage ?? UIImage.bundleImage(named: "error")?.render(color: label.textColor)
-                animation = .none
+                
+                loadingAnimation = .none
                 addTimer()
                 
             case .loading:
@@ -485,22 +502,11 @@ class HUD: UIView {
                 progressLayer.isHidden = true
                 progressLabel.isHidden = true
                 
-                if let loadingImages = loadingImages {
-                    
-                    imageView.animationImages = loadingImages
-                    
-                    animation = .gif
-                    
-                }else {
-                    
-                    imageView.image = loadingImage ?? UIImage.bundleImage(named: "loading")?.render(color: label.textColor)
-                    
-                    animation = .rotation
-                }
+                loadingAnimation = (loadingImages == nil) ? .rotation : .gif
                 
             case .progress:
                 
-                animation = .none
+                loadingAnimation = .none
                 imageView.isHidden = true
                 progressLayer.isHidden = false
                 progressLabel.isHidden = false
@@ -509,15 +515,24 @@ class HUD: UIView {
             
             setNeedsLayout()
             
+            if transform == .identity {
+                return
+            }
+            
+            UIView.animate(withDuration: 0.25, delay: 0, usingSpringWithDamping: 0.75, initialSpringVelocity: 0.75, options: .curveEaseInOut, animations: {
+                
+                self.transform = CGAffineTransform.identity
+                
+            }, completion: nil)
+            
         }
     }
 
-    
-    fileprivate var animation: HUDAnimation = .none {
+    fileprivate var loadingAnimation: HUDLoadingAnimation = .none {
         
         didSet{
             
-            switch animation {
+            switch loadingAnimation {
                 
             case .none:
                 
@@ -527,6 +542,8 @@ class HUD: UIView {
                 
             case .rotation:
                 
+                imageView.image = loadingImage ?? UIImage.bundleImage(named: "loading")?.render(color: label.textColor)
+                
                 let anim = CABasicAnimation(keyPath: "transform.rotation.z")
                 anim.toValue = M_PI * 2.0
                 anim.duration = animationDuration
@@ -535,6 +552,7 @@ class HUD: UIView {
 
             case .gif:
                 
+                imageView.animationImages = loadingImages
                 imageView.animationDuration = animationDuration
                 imageView.startAnimating()
             }

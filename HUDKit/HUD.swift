@@ -57,7 +57,6 @@ extension UIView: HUDtable {
             hud = HUD()
             addSubview(hud)
             hud.frame = bounds
-            hud.transform = CGAffineTransform(scaleX: 0, y: 0)
         }
         
         hud.reset()
@@ -250,7 +249,7 @@ open class HUD: UIView {
             
             switch maskType {
             case .none:
-                backgroundColor = UIColor.clear
+                backgroundColor = nil
                 isUserInteractionEnabled = false
                 
             case .clear:
@@ -326,7 +325,8 @@ open class HUD: UIView {
     fileprivate lazy var contentView: UIView = {
        
         let contentView = UIView()
-        
+        contentView.alpha = 0
+//        contentView.transform = CGAffineTransform(scaleX: 0, y: 0)
         contentView.layer.cornerRadius = 10
         
         return contentView
@@ -355,15 +355,11 @@ open class HUD: UIView {
         
         super.init(frame: frame)
         
-        autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        setupUI()
         
-        addSubview(contentView)
-        contentView.addSubview(imageView)
-        contentView.addSubview(label)
-        contentView.addSubview(progressLabel)
-        contentView.layer.addSublayer(progressLayer)
+        setupData()
         
-        reset()
+        setupNotification()
         
     }
     
@@ -448,10 +444,41 @@ open class HUD: UIView {
         
         progressLabel.frame = imageView.frame
         
+        guard let keyboardFrame = visableKeyboardFrame else {
+            return
+        }
+        
+        let duration: Double = 0.25
+        
+        let margin: CGFloat = 15
+        
+        let delta = center.y + contentView.frame.height * 0.5 - keyboardFrame.origin.y + margin
+        
+        if delta > 0 {
+            
+            UIView.animate(withDuration: duration, animations: {
+                
+                self.contentView.transform = CGAffineTransform(translationX: 0, y: -delta)
+            })
+            
+            
+        }else {
+            
+            UIView.animate(withDuration: duration, animations: {
+                
+                self.contentView.transform = CGAffineTransform.identity
+            })
+            
+        }
+        
     }
     
     required public init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
     
     fileprivate var state: HUDState = .success{
@@ -515,15 +542,15 @@ open class HUD: UIView {
             
             setNeedsLayout()
             
-            if transform == .identity {
-                return
+            if contentView.alpha != 1 {
+                
+                UIView.animate(withDuration: 0.25, animations: { 
+                    
+                    self.contentView.alpha = 1
+                })
             }
             
-            UIView.animate(withDuration: 0.25, delay: 0, usingSpringWithDamping: 0.75, initialSpringVelocity: 0.75, options: .curveEaseInOut, animations: {
-                
-                self.transform = CGAffineTransform.identity
-                
-            }, completion: nil)
+            
             
         }
     }
@@ -548,6 +575,7 @@ open class HUD: UIView {
                 anim.toValue = M_PI * 2.0
                 anim.duration = animationDuration
                 anim.repeatCount = MAXFLOAT
+                anim.isRemovedOnCompletion = false
                 imageView.layer.add(anim, forKey: "rotation")
 
             case .gif:
@@ -580,6 +608,85 @@ open class HUD: UIView {
     
     
 }
+
+// MARK: - Private Method
+extension HUD{
+    
+    fileprivate func setupUI() {
+    
+        autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        
+        addSubview(contentView)
+        contentView.addSubview(imageView)
+        contentView.addSubview(label)
+        contentView.addSubview(progressLabel)
+        contentView.layer.addSublayer(progressLayer)
+
+    
+    }
+    
+    fileprivate func setupData() {
+        
+        reset()
+    }
+    
+    fileprivate func setupNotification() {
+        NotificationCenter.default.addObserver(self, selector: #selector(HUD.keyboardWillChangeFrameNotification), name: NSNotification.Name.UIKeyboardWillChangeFrame, object: nil)
+        
+    }
+    
+}
+
+extension HUD{
+    
+    var visableKeyboardFrame: CGRect? {
+        
+        var tmp: UIWindow? = nil
+        
+        for window in UIApplication.shared.windows {
+            
+            if !window.isMember(of: UIWindow.self) {
+                
+                tmp = window
+                break
+            }
+            
+        }
+        
+        guard let keyboardWindow = tmp  else {
+            return nil
+        }
+        
+        for possibleKeyboard in keyboardWindow.subviews {
+            
+            if possibleKeyboard.isKind(of: NSClassFromString("UIPeripheralHostView")!) || possibleKeyboard.isKind(of: NSClassFromString("UIKeyboard")!){
+                
+                return possibleKeyboard.frame
+            }else if possibleKeyboard.isKind(of: NSClassFromString("UIInputSetContainerView")!) {
+                
+                for possibleKeyboardSubview in possibleKeyboard.subviews {
+                    
+                    if possibleKeyboardSubview.isKind(of: NSClassFromString("UIInputSetHostView")!) {
+                        return possibleKeyboardSubview.frame
+                    }
+                    
+                }
+                
+            }
+            
+        }
+        
+        return nil
+        
+    }
+    
+    func keyboardWillChangeFrameNotification() {
+        
+        setNeedsLayout()
+    }
+}
+
+
 
 
 fileprivate extension UIImage {

@@ -310,7 +310,23 @@ extension UIImage{
     
     convenience init?(bundleNamed: String) {
         
-        self.init(named: "./HUD.bundle/" + bundleNamed)
+        var name = bundleNamed
+        if UIScreen.main.bounds.width == 414 {
+            name += "@3x"
+        }else {
+            name += "@2x"
+        }
+        
+        var resourceBundle: Bundle! = Bundle(for: HUD.self)
+        
+        var resourcePath: String! = resourceBundle.path(forResource: "HUDKit", ofType: "bundle")
+        if resourcePath != nil  {
+            resourceBundle = Bundle(path: resourcePath!)
+        }
+        
+        resourcePath = resourceBundle.path(forResource: name, ofType: "png")
+        
+        self.init(contentsOfFile: resourcePath)
         
     }
     

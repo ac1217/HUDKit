@@ -33,22 +33,17 @@ public enum HUDLayoutDirection : Int {
     
 }
 
-public protocol HUDtable {
-    
-    var hud: HUD { get }
-    
-}
-
-extension UIView: HUDtable {
+extension UIView {
     
     public var hud: HUD{
+        
         
         var hud: HUD!
         for subview in subviews {
             
-            if subview is HUD {
+            if let subview = subview as? HUD {
+                hud = subview
                 
-                hud = subview as! HUD
                 break
             }
         }
@@ -56,10 +51,10 @@ extension UIView: HUDtable {
         if hud == nil {
             hud = HUD()
             addSubview(hud)
-            hud.frame = bounds
         }
         
-        hud.reset()
+        hud.frame = bounds
+        hud.setupData()
         
         return hud
         
@@ -75,63 +70,64 @@ fileprivate enum HUDLoadingAnimation : Int {
     
 }
 
-fileprivate enum HUDState : Int {
-    
-    case info
-    case success
-    case error
-    case loading
-    case progress
-    
-}
+
 
 public extension HUD {
     
-     func show(success: String?) {
+    func showNotification(_ image: UIImage?, msg: String?, detailMsg: String?) {
         
-        label.text = success
+        removeTimer()
         
-        state = .success
+        contentView.show(type: .notification, msg: msg, detailMsg: detailMsg, image: image)
+        
+        addTimer()
+    }
+    
+     func showSuccess(_ msg: String?) {
+        
+        removeTimer()
+        contentView.show(type: .success, msg: msg)
+        addTimer()
+        
+    }
+    
+     func showError(_ msg: String?){
+        
+        removeTimer()
+        contentView.show(type: .error, msg: msg)
+
+        addTimer()
+        
         
         
     }
     
-     func show(error: String?){
+     func showLoading(_ msg: String? = nil){
         
-        label.text = error
+        removeTimer()
+        contentView.show(type: .loading, msg: msg)
+
         
-        state = .error
-        
-    }
-    
-     func show(loading: String? = nil){
-        
-        label.text = loading
-        
-        state = .loading
         
     }
     
-     func show(info: String?) {
+     func showInfo(_ msg: String?) {
         
-        label.text = info
         
-        state = .info
+        removeTimer()
+        contentView.show(type: .info, msg: msg)
+
+        addTimer()
+        
         
     }
     
-     func show(progress: Double, status: String? = nil) {
+     func showProgress(_ progress: Double, msg: String? = nil) {
         
-        label.text = status
+        removeTimer()
+        contentView.show(type: .progress, msg: msg, progress: progress)
+
         
-        state = .progress
-        
-        progressLayer.strokeEnd = CGFloat(progress)
-        
-        if !isShowProgress {
-            return
-        }
-        progressLabel.text = String(format: "%.f%%", progress * 100)
         
     }
     
@@ -152,25 +148,6 @@ public extension HUD {
     }
     
     
-     func reset() {
-        
-        contentInset = HUD.defaultContentInset
-        horizontalMargin = HUD.defaultHorizontalMargin
-        verticalMargin = HUD.defaultVerticalMargin
-        delay = HUD.defaultDelay
-        maskType = HUD.defaultMaskType
-        style = HUD.defaultStyle
-        successImage = HUD.defaultSuccessImage
-        errorImage = HUD.defaultErrorImage
-        loadingImage = HUD.defaultLoadingImage
-        loadingImages = HUD.defaultLoadingImages
-        infoImage = HUD.defaultInfoImage
-        layoutDirection = HUD.defaultLayoutDirection
-        animationDuration = HUD.defaultAnimationDuration
-        
-    }
-    
-    
 }
 
 
@@ -185,10 +162,10 @@ open class HUD: UIView {
     open static var defaultDelay: TimeInterval = 2
     open static var defaultStyle: HUDStyle = .dark
     open static var defaultMaskType: HUDMaskType = .none
-    open static var defaultSuccessImage: UIImage?
-    open static var defaultErrorImage: UIImage?
-    open static var defaultInfoImage: UIImage?
-    open static var defaultLoadingImage: UIImage?
+    open static var defaultSuccessImage: UIImage? = UIImage(bundleNamed: "success")
+    open static var defaultErrorImage: UIImage? = UIImage(bundleNamed: "error")
+    open static var defaultInfoImage: UIImage? = UIImage(bundleNamed: "info")
+    open static var defaultLoadingImage: UIImage? = UIImage(bundleNamed: "loading")
     open static var defaultLayoutDirection: HUDLayoutDirection = .vertical
     open static var defaultLoadingImages: [UIImage]?
     open static var defaultAnimationDuration: TimeInterval = 2
@@ -198,7 +175,7 @@ open class HUD: UIView {
     open static var defaultVerticalMargin: CGFloat = 10
     open static var defaultProgressSize: CGSize = CGSize(width: 35, height: 35)
     
-    open static var isDefaultShowProgress = true
+    open static var isDefaultShowProgressLabel = true
     
     open static var defaultStyleColor: UIColor?
     open static var defaultTextColor: UIColor?
@@ -210,46 +187,15 @@ open class HUD: UIView {
      
 *************/
     
-    /*内容边距*/
-    open var contentInset: UIEdgeInsets = defaultContentInset
-    /*水平间距*/
-    open var horizontalMargin: CGFloat = defaultHorizontalMargin
-    /*垂直间距*/
-    open var verticalMargin: CGFloat = defaultVerticalMargin
     /*自动消失时间*/
     open var delay = defaultDelay
-    /*进度环size大小*/
-    open var progressSize = defaultProgressSize
-    /*内容布局方向*/
-    open var layoutDirection = defaultLayoutDirection
-    /*成功的图片*/
-    open var successImage = defaultSuccessImage
-    /*失败的图片*/
-    open var errorImage = defaultErrorImage
-    /*提示的图片*/
-    open var infoImage = defaultInfoImage
-    /*loading的图片,旋转动画*/
-    open var loadingImage = defaultLoadingImage
-    /* loadingImages 比 loadingImage 优先级更高,优先使用自定义gif动画 */
-    open var loadingImages = defaultLoadingImages
-    /*动画时长*/
-    open var animationDuration = defaultAnimationDuration
-    /*是否需要展示具体进度值*/
-    open var isShowProgress = isDefaultShowProgress
-    /*hud背景颜色,当style==.custom时生效*/
-    open var styleColor = defaultStyleColor
-    /*hud文字颜色,当style==.custom时生效*/
-    open var textColor = defaultTextColor
-    /*style content背景alpha值*/
-    open var styleAlpha = defaultStyleAlpha
-    
     /*背景遮罩样式*/
     open var maskType: HUDMaskType = defaultMaskType{
         didSet{
             
             switch maskType {
             case .none:
-                backgroundColor = nil
+                backgroundColor = UIColor.clear
                 isUserInteractionEnabled = false
                 
             case .clear:
@@ -271,85 +217,22 @@ open class HUD: UIView {
     /*内容样式*/
     open var style: HUDStyle = defaultStyle{
         didSet{
-            switch style {
-            case .dark:
-                
-                contentView.backgroundColor = UIColor(white: 0, alpha: styleAlpha)
-                
-                label.textColor = UIColor.white
-                
-                
-            case .light:
-                contentView.backgroundColor = UIColor(white: 1, alpha: styleAlpha)
-                
-                label.textColor = UIColor(red: 31/255.0, green: 31/255.0, blue: 31/255.0, alpha: 1)
-                
-                
-            case .custom:
-                contentView.backgroundColor = styleColor?.withAlphaComponent(styleAlpha)
-                
-                label.textColor = textColor
-                
-                
-            }
-            
-            progressLayer.strokeColor = label.textColor.cgColor
-            progressLabel.textColor = label.textColor
+            contentView.style = style
 
         }
     }
     
-        /*lazy load*/
-    fileprivate lazy var progressLayer: CAShapeLayer = {
-       
-        let progressLayer = CAShapeLayer()
-        progressLayer.fillColor = UIColor.clear.cgColor
-        progressLayer.lineWidth = 2
-        progressLayer.strokeEnd = 0
-        progressLayer.lineCap = kCALineCapRound
-        
-        return progressLayer
-        
-    }()
     
-    fileprivate lazy var progressLabel: UILabel = {
+    fileprivate lazy var contentView: HUDContentView = {
        
-        let progressLabel = UILabel()
-        progressLabel.font = UIFont.systemFont(ofSize: 10)
-        progressLabel.textAlignment = .center
-        
-        return progressLabel
-        
-    }()
-    
-    fileprivate lazy var contentView: UIView = {
-       
-        let contentView = UIView()
-        contentView.alpha = 0
-//        contentView.transform = CGAffineTransform(scaleX: 0, y: 0)
+        let contentView = HUDContentView()
         contentView.layer.cornerRadius = 10
         
         return contentView
         
     }()
     
-   fileprivate lazy var label: UILabel = {
-        
-        let label = UILabel()
     
-        label.textAlignment = .center
-        label.numberOfLines = 0
-        label.font = UIFont.systemFont(ofSize: 14)
-        
-        return label
-    }()
-    
-    fileprivate lazy var imageView: UIImageView = {
-       
-        let iv = UIImageView()
-        return iv
-        
-    }()
     /*life cycle*/
     override init(frame: CGRect) {
         
@@ -357,237 +240,14 @@ open class HUD: UIView {
         
         setupUI()
         
-        setupData()
-        
-        setupNotification()
         
     }
     
-    
-     override open func layoutSubviews() {
-        
-        super.layoutSubviews()
-        
-        if state == .progress {
-            
-            imageView.frame.size = progressSize
-            
-        }else {
-            
-            imageView.sizeToFit()
-        }
-        
-        if layoutDirection == .horizontal {
-            
-            let contentH = max(label.frame.height, imageView.frame.size.height) + contentInset.top + contentInset.bottom
-            
-            label.frame.size = label.sizeThatFits(CGSize(width: bounds.width * 0.75 - imageView.frame.size.width - horizontalMargin, height: 0))
-            
-            var contentW = contentInset.left + contentInset.right
-            
-            var startX = contentInset.left
-            if imageView.frame.size != CGSize.zero {
-                contentW += imageView.frame.size.width
-                
-                imageView.frame.origin.x = startX
-                progressLayer.frame.origin.x = startX
-                
-                startX = imageView.frame.maxX + horizontalMargin
-                
-            }
-            
-            if label.frame.size != CGSize.zero {
-                contentW += label.frame.size.width + horizontalMargin
-                label.frame.origin.x = startX
-            }
-
-            contentView.frame.size = CGSize(width: contentW, height: contentH)
-            contentView.center = center
-            
-            label.center.y = contentView.frame.height * 0.5
-            imageView.center.y = label.center.y
-            
-        }else {
-            
-            label.frame.size = label.sizeThatFits(CGSize(width: bounds.width * 0.75, height: 0))
-            
-            var contentH = contentInset.top + contentInset.bottom
-            
-            var startY = contentInset.top
-            if imageView.frame.size != CGSize.zero {
-                contentH += imageView.frame.size.height
-                
-                imageView.frame.origin.y = startY
-                
-                startY = imageView.frame.maxY + verticalMargin
-                
-            }
-            
-            if label.frame.size != CGSize.zero {
-                contentH += label.frame.size.height + verticalMargin
-                label.frame.origin.y = startY
-            }
-            
-            let contentW = max(label.frame.width, imageView.frame.size.width) + contentInset.left + contentInset.right
-            
-            contentView.frame.size = CGSize(width: contentW, height: contentH)
-            contentView.center = center
-            
-            label.center.x = contentView.frame.width * 0.5
-            imageView.center.x = label.center.x
-        }
-        
-        progressLayer.frame = imageView.frame
-        
-        let path = UIBezierPath(arcCenter: CGPoint(x: progressLayer.frame.width * 0.5, y: progressLayer.frame.height * 0.5), radius: progressLayer.frame.height * 0.5, startAngle: CGFloat(-M_PI_2), endAngle: CGFloat(M_PI * 3 / 2), clockwise: true)
-        progressLayer.path = path.cgPath
-        
-        progressLabel.frame = imageView.frame
-        
-        guard let keyboardFrame = visableKeyboardFrame else {
-            return
-        }
-        
-        let duration: Double = 0.25
-        
-        let margin: CGFloat = 15
-        
-        let delta = center.y + contentView.frame.height * 0.5 - keyboardFrame.origin.y + margin
-        
-        if delta > 0 {
-            
-            UIView.animate(withDuration: duration, animations: {
-                
-                self.contentView.transform = CGAffineTransform(translationX: 0, y: -delta)
-            })
-            
-            
-        }else {
-            
-            UIView.animate(withDuration: duration, animations: {
-                
-                self.contentView.transform = CGAffineTransform.identity
-            })
-            
-        }
-        
-    }
     
     required public init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-    }
-    
-    fileprivate var state: HUDState = .success{
-        didSet{
-            
-            removeTimer()
-            
-            switch state {
-            case .info:
-                
-                imageView.isHidden = false
-                
-                progressLayer.isHidden = true
-                progressLabel.isHidden = true
-                
-                imageView.image = infoImage ?? UIImage.bundleImage(named: "info")?.render(color: label.textColor)
-                loadingAnimation = .none
-                
-                addTimer()
-                
-            case .success:
-                
-                imageView.isHidden = false
-                
-                progressLayer.isHidden = true
-                progressLabel.isHidden = true
-                
-                imageView.image = successImage ?? UIImage.bundleImage(named: "success")?.render(color: label.textColor)
-                loadingAnimation = .none
-                addTimer()
-                
-            case .error:
-                
-                imageView.isHidden = false
-                
-                progressLayer.isHidden = true
-                progressLabel.isHidden = true
-                
-                imageView.image = errorImage ?? UIImage.bundleImage(named: "error")?.render(color: label.textColor)
-                
-                loadingAnimation = .none
-                addTimer()
-                
-            case .loading:
-                
-                imageView.isHidden = false
-                
-                progressLayer.isHidden = true
-                progressLabel.isHidden = true
-                
-                loadingAnimation = (loadingImages == nil) ? .rotation : .gif
-                
-            case .progress:
-                
-                loadingAnimation = .none
-                imageView.isHidden = true
-                progressLayer.isHidden = false
-                progressLabel.isHidden = false
-                
-            }
-            
-            setNeedsLayout()
-            
-            if contentView.alpha != 1 {
-                
-                UIView.animate(withDuration: 0.25, animations: { 
-                    
-                    self.contentView.alpha = 1
-                })
-            }
-            
-            
-            
-        }
-    }
-
-    fileprivate var loadingAnimation: HUDLoadingAnimation = .none {
-        
-        didSet{
-            
-            switch loadingAnimation {
-                
-            case .none:
-                
-                imageView.stopAnimating()
-                imageView.animationImages = nil
-                imageView.layer.removeAnimation(forKey: "rotation")
-                
-            case .rotation:
-                
-                imageView.image = loadingImage ?? UIImage.bundleImage(named: "loading")?.render(color: label.textColor)
-                
-                let anim = CABasicAnimation(keyPath: "transform.rotation.z")
-                anim.toValue = M_PI * 2.0
-                anim.duration = animationDuration
-                anim.repeatCount = MAXFLOAT
-                anim.isRemovedOnCompletion = false
-                imageView.layer.add(anim, forKey: "rotation")
-
-            case .gif:
-                
-                imageView.animationImages = loadingImages
-                imageView.animationDuration = animationDuration
-                imageView.startAnimating()
-            }
-            
-        }
-        
-    }
     
     
     fileprivate var timer: Timer?
@@ -617,83 +277,40 @@ extension HUD{
         autoresizingMask = [.flexibleWidth, .flexibleHeight]
         
         addSubview(contentView)
-        contentView.addSubview(imageView)
-        contentView.addSubview(label)
-        contentView.addSubview(progressLabel)
-        contentView.layer.addSublayer(progressLayer)
-
-    
+        
     }
     
     fileprivate func setupData() {
         
-        reset()
-    }
-    
-    fileprivate func setupNotification() {
-        NotificationCenter.default.addObserver(self, selector: #selector(HUD.keyboardWillChangeFrameNotification), name: NSNotification.Name.UIKeyboardWillChangeFrame, object: nil)
+        delay = HUD.defaultDelay
+        maskType = HUD.defaultMaskType
+        style = HUD.defaultStyle
+        
+        contentView.errorImage = HUD.defaultErrorImage
+        contentView.loadingImage = HUD.defaultLoadingImage
+        contentView.loadingImages = HUD.defaultLoadingImages
+        contentView.infoImage = HUD.defaultInfoImage
+        contentView.successImage = HUD.defaultSuccessImage
+        
+        contentView.contentInset = HUD.defaultContentInset
+        contentView.horizontalMargin = HUD.defaultHorizontalMargin
+        contentView.verticalMargin = HUD.defaultVerticalMargin
+        contentView.layoutDirection = HUD.defaultLayoutDirection
+        contentView.animationDuration = HUD.defaultAnimationDuration
+        contentView.isShowProgressLabel = HUD.isDefaultShowProgressLabel
         
     }
+    
+    
     
 }
 
-extension HUD{
+// MARK: - Tool
+extension UIImage{
     
-    var visableKeyboardFrame: CGRect? {
+    convenience init?(bundleNamed: String) {
         
-        var tmp: UIWindow? = nil
-        
-        for window in UIApplication.shared.windows {
-            
-            if !window.isMember(of: UIWindow.self) {
-                
-                tmp = window
-                break
-            }
-            
-        }
-        
-        guard let keyboardWindow = tmp  else {
-            return nil
-        }
-        
-        for possibleKeyboard in keyboardWindow.subviews {
-            
-            if possibleKeyboard.isKind(of: NSClassFromString("UIPeripheralHostView")!) || possibleKeyboard.isKind(of: NSClassFromString("UIKeyboard")!){
-                
-                return possibleKeyboard.frame
-            }else if possibleKeyboard.isKind(of: NSClassFromString("UIInputSetContainerView")!) {
-                
-                for possibleKeyboardSubview in possibleKeyboard.subviews {
-                    
-                    if possibleKeyboardSubview.isKind(of: NSClassFromString("UIInputSetHostView")!) {
-                        return possibleKeyboardSubview.frame
-                    }
-                    
-                }
-                
-            }
-            
-        }
-        
-        return nil
-        
-    }
-    
-    func keyboardWillChangeFrameNotification() {
-        
-        setNeedsLayout()
-    }
-}
-
-
-
-
-fileprivate extension UIImage {
-    
-    class func bundleImage(named: String) -> UIImage? {
-        
-        return UIImage(named: "./HUD.bundle/" + named)
+        self.init(named: "./HUD.bundle/" + bundleNamed)
         
     }
     
@@ -721,6 +338,9 @@ fileprivate extension UIImage {
     }
     
 }
+
+
+
 
 
 

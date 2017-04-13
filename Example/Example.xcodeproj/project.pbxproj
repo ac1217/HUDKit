@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		072E8D161E9DF81D005ACEFF /* HUDContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072E8D151E9DF81D005ACEFF /* HUDContentView.swift */; };
+		072E8D181E9DF97C005ACEFF /* HUDContentProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 072E8D171E9DF97C005ACEFF /* HUDContentProgressView.swift */; };
 		079BC5DD1E0381E400FE3387 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 079BC5DC1E0381E400FE3387 /* AppDelegate.swift */; };
 		079BC5DF1E0381E400FE3387 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 079BC5DE1E0381E400FE3387 /* ViewController.swift */; };
 		079BC5E21E0381E400FE3387 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 079BC5E01E0381E400FE3387 /* Main.storyboard */; };
@@ -36,6 +38,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		072E8D151E9DF81D005ACEFF /* HUDContentView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HUDContentView.swift; sourceTree = "<group>"; };
+		072E8D171E9DF97C005ACEFF /* HUDContentProgressView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HUDContentProgressView.swift; sourceTree = "<group>"; };
 		079BC5D91E0381E400FE3387 /* Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		079BC5DC1E0381E400FE3387 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		079BC5DE1E0381E400FE3387 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -135,6 +139,8 @@
 			children = (
 				079BC6141E03822100FE3387 /* HUD.bundle */,
 				079BC6111E03820800FE3387 /* HUD.swift */,
+				072E8D151E9DF81D005ACEFF /* HUDContentView.swift */,
+				072E8D171E9DF97C005ACEFF /* HUDContentProgressView.swift */,
 			);
 			name = HUDKit;
 			path = ../../HUDKit;
@@ -281,6 +287,8 @@
 				079BC5DF1E0381E400FE3387 /* ViewController.swift in Sources */,
 				079BC5DD1E0381E400FE3387 /* AppDelegate.swift in Sources */,
 				079BC6131E03820800FE3387 /* HUD.swift in Sources */,
+				072E8D181E9DF97C005ACEFF /* HUDContentProgressView.swift in Sources */,
+				072E8D161E9DF81D005ACEFF /* HUDContentView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -529,6 +537,7 @@
 				079BC6031E0381E400FE3387 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		079BC6041E0381E400FE3387 /* Build configuration list for PBXNativeTarget "ExampleTests" */ = {
 			isa = XCConfigurationList;
@@ -537,6 +546,7 @@
 				079BC6061E0381E400FE3387 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		079BC6071E0381E400FE3387 /* Build configuration list for PBXNativeTarget "ExampleUITests" */ = {
 			isa = XCConfigurationList;
@@ -545,6 +555,7 @@
 				079BC6091E0381E400FE3387 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

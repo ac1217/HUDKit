@@ -63,5 +63,11 @@ class HUDContentProgressView: UIView {
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+    
+    // 关闭隐式动画
+    override func action(for layer: CALayer, forKey event: String) -> CAAction? {
+        
+        return NSNull()
+    }
 
 }

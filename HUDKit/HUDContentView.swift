@@ -162,13 +162,8 @@ class HUDContentView: UIView {
             detailTextLabel.text = detailMsg
         }
         
-        guard alpha != 1 else {
-            return
-        }
+        showAnimation()
         
-        UIView.animate(withDuration: 0.25) { 
-            self.alpha = 1
-        }
         
     }
     
@@ -388,6 +383,15 @@ class HUDContentView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
+    func showAnimation() {
+          
+        UIView.animate(withDuration: 0.25) {
+            
+            self.alpha = 1
+            
+        }
+        
+    }
     
     
     func reset() {
